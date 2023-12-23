@@ -1,46 +1,52 @@
-# gui.py
-
 import tkinter as tk
-from practice2 import register, login, login_attempts
+from tkinter import *
+from tkinter import ttk
+import tkinter.messagebox as msgbox
+import security
+import time
 
-class LoginGUI(tk.Tk):
-    def __init__(self):
-        super().__init__()
-        self.title("Login System")
 
-        tk.Button(self, text="Sign Up", command=self.register_window).pack(pady=20)
-        tk.Button(self, text="Login", command=self.login_window).pack(pady=20)
+# 기본 윈도우 생성
+window = tk.Tk()
+window.title("Login System")
+window.geometry("500x350")
 
-    def register_window(self):
-        register()
+# 사이 간격
+empty_label=tk.Label(window)
+empty_label.pack(pady=5)
 
-    def login_window(self):
-        login_count = 2
+# ID 입력 레이블과 엔트리
+id_label = tk.Label(window, text="ID:", font=("Arial", 20))
+id_label.pack()
+id_entry = tk.Entry(window, font=("Arial", 20))
+id_entry.pack()
 
-        login_window = tk.Toplevel(self)
-        login_window.title("Login")
+# 사이 간격
+empty_label=tk.Label(window)
+empty_label.pack(pady=5)
 
-        tk.Label(login_window, text="ID:").grid(row=0, column=0)
-        tk.Label(login_window, text="Password:").grid(row=1, column=0)
+# 비밀번호 입력 레이블과 엔트리
+password_label = tk.Label(window, text="Password:", font=("Arial", 20))
+password_label.pack()
+password_entry = tk.Entry(window, show="*", font=("Arial", 20))
+password_entry.pack()
 
-        id_entry = tk.Entry(login_window)
-        password_entry = tk.Entry(login_window, show="*")
+# 로그인 버튼 클릭 시 실행되는 함수
+def login():
+    id = id_entry.get()
+    password = password_entry.get()
 
-        id_entry.grid(row=0, column=1)
-        password_entry.grid(row=1, column=1)
 
-        def handle_login_attempt():
-            user_id = id_entry.get()
-            user_password = password_entry.get()
+# 로그인 버튼 클릭 시 실행되는 함수
+def login():
+    id = id_entry.get()
+    password = password_entry.get()
+    # 여기서는 아이디와 비밀번호 확인 절차를 생략하고, 항상 로그인 성공 메시지를 표시합니다.
+    msgbox.showinfo("알림", "로그인 성공")
 
-            if login(user_id, user_password, login_count):
-                tk.Label(login_window, text=f'Login successful! Welcome, {user_id}.').grid(row=3, column=1)
-                login_window.destroy()
-            else:
-                tk.Label(login_window, text='Login failed. Check your ID and password.').grid(row=3, column=1)
+# 로그인 버튼
+login_button = tk.Button(window, text="로그인", command=login, width=13, height=2)
+login_button.pack(pady=20)
 
-        tk.Button(login_window, text="Login", command=handle_login_attempt).grid(row=2, column=1)
-
-if __name__ == '__main__':
-    app = LoginGUI()
-    app.mainloop()
+# 윈도우 실행
+window.mainloop()

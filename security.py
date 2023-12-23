@@ -1,12 +1,12 @@
-import hashlib
-import os
 import time
 import re
 from twilio.rest import Client
+import bcrypt
+from datetime import date
 
 # Set environment variables for your credentials
 account_sid = "AC6c645edb15a53e478aa49c8a8d13886f"
-auth_token = "7a77fed8a05a7ae73aeebe309b64c591"
+auth_token = "b49bf34d7a8007e819ef2e22bdc26026"
 verify_sid = "VA4a0c085fb0b4b1b05e762e2f6d9878ae"
 verified_number = "+821065868791"
 
@@ -22,9 +22,51 @@ member_encrypt_db={
     'user2':'',
     'user3':''}
 
+pw_hint={
+    'admin':5,
+    'user1':8,
+    'user2':1,
+    'user3':6
+}
+
+register_date={
+    'admin':'2012-5-11',
+    'user1':'2015-6-24',
+    'user2':'2022-12-9',
+    'user3':'2020-12-25'
+}
+
+
+hint_list={
+    1:'좋아하는 동물',
+    2:'최근에 읽은 책의 주인공',
+    3:'좋아하는 음식',
+    4:'자주 가는 여행지',
+    5:'좋아하는 가수와 그 가수의 데뷔년도',
+    6:'좋아하는 영화',
+    7:'자주 사용하는 앱',
+    8:'좋아하는 운동과 그 운동을 시작한 년도',
+    9:'좋아하는 색깔',
+    10:'좋아하는 계절',
+    11:'좋아하는 과일',
+    12:'좋아하는 꽃',
+    13:'가장 기억에 남는 여행지',
+    14:'좋아하는 향수',
+    15:'가장 인상 깊었던 꿈의 장소',
+    16:'가장 좋아하는 작가',
+    17:'좋아하는 음악 장르',
+    18:'첫 애완동물의 이름',
+    19:'좋아하는 과학 분야',
+    20:'좋아하는 휴일'
+}
+
+
 login_count=2
 
 client = Client(account_sid, auth_token)
+
+today = date.today()
+
 
 def password_check(password):
     if re.match(r'^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$', password):
@@ -32,11 +74,14 @@ def password_check(password):
     else:
         return False
 
-def encrypt_password(password):
-    salt = os.urandom(16)  # 16바이트 길이의 무작위 솔트 생성
-    password_with_salt = salt + password.encode()  # 솔트와 비밀번호 결합
-    hashed_password = hashlib.sha256(password_with_salt).hexdigest()  # 해시 함수로 암호화
-    return (salt, hashed_password)
+def encrypt_password():
+    for id in member_text_db:
+        new_salt=bcrypt.gensalt()
+        new_password=member_text_db[id].encode('utf-8')
+        hashed_password=bcrypt.hashpw(new_password,new_salt)
+        decode_hash_pw=hashed_password.decode('utf-8')
+        member_encrypt_db[id]=decode_hash_pw
+
 
 
 def register():
@@ -45,7 +90,11 @@ def register():
         if id in member_text_db:
             print('ID already exists. Please try another ID.')
         else:
+            print("Here's some hints for making passwords\n",print_member(hint_list))
             while True:
+                hint_num=input("Choose one number'\n")
+                pw_hint[id]=int(hint_num)
+                register_date[id]=str(today)
                 password = input('Please enter your password: ')
                 if password_check(password):
                     member_text_db[id] = password
@@ -55,13 +104,10 @@ def register():
                 else:
                     print('Password must contain at least one uppercase letter, one digit, and one special character.')
 
-def login_text(id, password):
-    if member_encrypt_db[id]==password:
-        print("Stored Password : ",member_encrypt_db[id])
-        print("Input Password : ",password)
-        return True
-    else:
-        return False
+def login_text(id,password):
+    decode_db_pw=member_encrypt_db[id].encode('utf-8')
+    result=bcrypt.checkpw(password,decode_db_pw)
+    return result
 
 def print_member(member):
     for id in member:
@@ -90,9 +136,9 @@ def login(login_count):
     while True:
         if id in member_text_db:
             while login_count >=0:
-                password=input('Password: ')
-                password_encrypt=hashlib.sha256(password.encode()).hexdigest() 
-                login_result=login_text(id,password_encrypt)
+                input_password=input('Password: ')
+                bytes_input_pw=input_password.encode('utf-8')
+                login_result=login_text(id,bytes_input_pw)
 
                 if login_result:
                     print('Welcome!')
@@ -110,6 +156,8 @@ def login(login_count):
                                 if phone_status == 'approved':
                                     login_count = 2
                                     print('Phone verification successful. You can try to login again.')
+                                    print("Here's your hint of password you choosed : ",hint_list[pw_hint[id]])
+                                    print("Here's the date you registered.",register_date[id])
                                     break
                                 elif time.time() - start_time >= 300: # 5 minutes has passed
                                     print('Phone verification failed or time out. Please try again.')
@@ -133,10 +181,10 @@ def login(login_count):
 
 
 if __name__=='__main__':
-    response_signup=input('Would you want to sign up? If you want, response "y"\n')
+    response_signup=input('Do you want to sign up? If you want, response "y"\n')
     if response_signup =='y':
         register()
-        response_login=input('Would you want to login now? If you want, reponse "y"')
+        response_login=input('Do you want to login now? If you want, reponse "y"\n')
         if response_login=='y':
             login(login_count)
         else:
